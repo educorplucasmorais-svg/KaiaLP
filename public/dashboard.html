@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAIA 5.0 - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #05070a; color: #e2e8f0; font-family: sans-serif; }
+    .glass-card { background: rgba(15, 23, 42, 0.6 ); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; }
+    .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  </style>
+</head>
+<body class="p-4 md:p-10 min-h-screen">
+  <div class="max-w-4xl mx-auto space-y-8">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-black text-white">📊 KAIA 5.0 - <span class="text-indigo-500">DASHBOARD</span></h1>
+      <button onclick="window.location.href='/'" class="bg-red-500/10 text-red-500 px-4 py-2 rounded-xl text-xs font-bold border border-red-500/20">SAIR</button>
+    </div>
+
+    <div class="glass-card p-8">
+      <h3 class="text-indigo-400 font-bold mb-6">📈 Estatísticas Gerais</h3>
+      <div id="stats-container" class="grid grid-cols-1 md:grid-cols-2 gap-x-12">
+        <div class="stat-row"><span class="text-slate-400">Total de Usuários</span><span class="text-white font-bold" id="val-leads">...</span></div>
+        <div class="stat-row"><span class="text-slate-400">Receita Total</span><span class="text-white font-bold" id="val-receita">...</span></div>
+        <div class="stat-row"><span class="text-slate-400">Vendas Concluídas</span><span class="text-white font-bold" id="val-vendas">...</span></div>
+        <div class="stat-row"><span class="text-slate-400">Taxa de Conversão</span><span class="text-emerald-400 font-bold" id="val-conv">...</span></div>
+      </div>
+    </div>
+
+    <div class="glass-card overflow-hidden">
+      <div class="p-6 border-b border-white/5"><h3 class="text-emerald-400 font-bold">💳 Últimos Pagamentos</h3></div>
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-900/50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
+          <tr><th class="p-6">Data</th><th class="p-6">Cliente</th><th class="p-6 text-right">Valor</th></tr>
+        </thead>
+        <tbody id="vendas-body" class="divide-y divide-white/5"></tbody>
+      </table>
+    </div>
+
+    <div class="glass-card overflow-hidden">
+      <div class="p-6 border-b border-white/5"><h3 class="text-purple-400 font-bold">🧠 Últimas Avaliações</h3></div>
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-900/50 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
+          <tr>
+            <th class="p-6">Data</th>
+            <th class="p-6">Nome</th>
+            <th class="p-6">Perfil</th>
+            <th class="p-6">QP</th>
+            <th class="p-6">Sabotador</th>
+          </tr>
+        </thead>
+        <tbody id="assessments-body" class="divide-y divide-white/5"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    
+    window.addEventListener('load', async function() {
+      try {
+        const response = await fetch(`${API_BASE}/dashboard`);
+        const data = await response.json();
+        
+        if (!data.success) {
+          alert("Erro: " + data.error);
+          return;
+        }
+        
+        // Estatísticas
+        document.getElementById('val-leads').innerText = data.stats.leadsAtivos;
+        document.getElementById('val-receita').innerText = data.stats.receitaTotal;
+        document.getElementById('val-vendas').innerText = data.stats.vendasConcluidas;
+        document.getElementById('val-conv').innerText = data.stats.taxaConversao;
+        
+        // Vendas
+        var vendasBody = document.getElementById('vendas-body');
+        vendasBody.innerHTML = '';
+        data.vendas.forEach(function(v) {
+          var row = document.createElement('tr');
+          row.innerHTML = '<td class="p-6 text-xs text-slate-400">' + v.data + '</td><td class="p-6 font-bold text-white">' + v.nome + '</td><td class="p-6 text-right font-mono text-emerald-400">' + v.valor + '</td>';
+          vendasBody.appendChild(row);
+        });
+        
+        // Avaliações
+        var assessmentsBody = document.getElementById('assessments-body');
+        assessmentsBody.innerHTML = '';
+        data.assessments.forEach(function(a) {
+          var row = document.createElement('tr');
+          row.innerHTML = '<td class="p-6 text-xs text-slate-400">' + a.data + '</td>' +
+                          '<td class="p-6 font-bold text-white">' + a.nome + '</td>' +
+                          '<td class="p-6 text-indigo-400">' + a.perfil + '</td>' +
+                          '<td class="p-6 text-emerald-400">' + a.qp + '</td>' +
+                          '<td class="p-6 text-orange-400">' + a.sabotador + '</td>';
+          assessmentsBody.appendChild(row);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
+    });
+  </script>
+</body>
+</html>

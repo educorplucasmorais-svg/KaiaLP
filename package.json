@@ -1,0 +1,21 @@
+{
+  "name": "kaia-lp",
+  "version": "1.0.0",
+  "description": "KAIA 5.0 - Plataforma de Mapeamento Comportamental",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Build complete'",
+    "start": "vercel dev"
+  },
+  "keywords": [
+    "kaia",
+    "disc",
+    "comportamento",
+    "assessment"
+  ],
+  "author": "REVELA",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
