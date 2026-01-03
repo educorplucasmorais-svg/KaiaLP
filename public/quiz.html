@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KAIA 5.0 - Mapeamento Comportamental</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #050505; color: #e2e8f0; font-family: sans-serif; }
+    .glass-panel { background: rgba(15, 15, 25, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
+    .option-card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s; }
+    .option-card:hover { border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
+    .btn-primary { background: #6366f1; color: white; font-weight: bold; padding: 15px 30px; border-radius: 15px; transition: 0.3s; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div id="mainContainer" class="w-full max-w-2xl glass-panel p-8 md:p-12 rounded-[2.5rem] shadow-2xl">
+    
+    <!-- INTRODUÇÃO -->
+    <div id="introStep" class="text-center">
+      <div class="w-20 h-20 bg-indigo-600/20 rounded-3xl flex items-center justify-center mx-auto mb-8"><i class="fas fa-rocket text-3xl text-indigo-400"></i></div>
+      <h1 class="text-3xl font-black text-white mb-4">Mapeamento KAIA 5.0</h1>
+      <p class="text-slate-400 mb-8 leading-relaxed">Descubra seu perfil comportamental e sua força mental em poucos minutos. Vamos começar?</p>
+      <button onclick="initQuiz()" class="btn-primary w-full">INICIAR AGORA</button>
+    </div>
+
+    <!-- FORMULÁRIO INICIAL -->
+    <div id="formStep" class="hidden text-center space-y-6">
+      <div class="w-16 h-16 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto"><i class="fas fa-user text-2xl text-indigo-400"></i></div>
+      <h2 class="text-2xl font-bold text-white">Antes de começar...</h2>
+      <p class="text-slate-400">Precisamos de algumas informações para personalizar sua análise.</p>
+      
+      <input type="text" id="userName" placeholder="Seu nome completo..." class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+      <input type="email" id="userEmail" placeholder="Seu melhor e-mail..." class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+      
+      <button onclick="startQuestions()" class="btn-primary w-full">CONTINUAR</button>
+    </div>
+
+    <!-- PAUSA DE CONHECIMENTO -->
+    <div id="knowledgeStep" class="hidden text-center">
+      <div class="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6"><i class="fas fa-lightbulb text-2xl text-emerald-400"></i></div>
+      <h2 id="kTitle" class="text-2xl font-bold text-white mb-4">Você sabia?</h2>
+      <p id="kText" class="text-slate-400 mb-8 leading-relaxed">Seu Quociente Positivo (QP) mede quanto tempo sua mente trabalha a seu favor em vez de sabotar seus resultados.</p>
+      <button onclick="resumeQuiz()" class="btn-primary w-full">CONTINUAR TESTE</button>
+    </div>
+
+    <!-- QUIZ -->
+    <div id="quizStep" class="hidden">
+      <div class="flex justify-between mb-6 text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+        <span id="phaseName">FASE 1: FORÇA MENTAL</span>
+        <span>Questão <span id="qIndex">1</span>/<span id="qTotal">10</span></span>
+      </div>
+      <div class="w-full bg-white/10 rounded-full h-2 mb-8">
+        <div id="progressBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+      <h2 id="qText" class="text-2xl font-bold text-white mb-10 min-h-[4rem]"></h2>
+      <div id="optionsContainer" class="flex flex-col gap-4"></div>
+    </div>
+
+    <!-- CARREGANDO -->
+    <div id="loadingStep" class="hidden text-center py-20">
+      <div class="w-20 h-20 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
+        <i class="fas fa-cog text-3xl text-indigo-400 animate-spin"></i>
+      </div>
+      <h2 class="text-xl font-bold text-white">Gerando sua análise...</h2>
+      <p class="text-slate-400 mt-2">Isso pode levar alguns segundos.</p>
+    </div>
+
+    <!-- RESULTADO -->
+    <div id="reportStep" class="hidden">
+      <div id="reportContent"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // CONFIGURAÇÃO
+    const API_BASE = '/api';
+    
+    // ESTADO
+    var questions = []; 
+    var currentIdx = 0; 
+    var answers = []; 
+    var isFull = false;
+    var userInfo = { nome: '', email: '' };
+    
+    // Verificar modo na URL
+    const urlParams = new URLSearchParams(window.location.search);
+    isFull = urlParams.get('mode') === 'full';
+    
+    function initQuiz() {
+      document.getElementById('introStep').classList.add('hidden');
+      document.getElementById('formStep').classList.remove('hidden');
+    }
+
+    async function startQuestions() {
+      userInfo.nome = document.getElementById('userName').value;
+      userInfo.email = document.getElementById('userEmail').value;
+      
+      if (!userInfo.nome || !userInfo.email) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+      }
+      
+      document.getElementById('formStep').classList.add('hidden');
+      document.getElementById('loadingStep').classList.remove('hidden');
+      
+      try {
+        const response = await fetch(`${API_BASE}/quiz?isFull=${isFull}`);
+        const data = await response.json();
+        questions = data.questions;
+        document.getElementById('qTotal').innerText = questions.length;
+        
+        document.getElementById('loadingStep').classList.add('hidden');
+        document.getElementById('quizStep').classList.remove('hidden');
+        renderQuestion();
+      } catch (error) {
+        console.error('Erro ao carregar questões:', error);
+        alert('Erro ao carregar o quiz. Por favor, tente novamente.');
+      }
+    }
+
+    function renderQuestion() {
+      // Intercalar conhecimento a cada 5 questões
+      if (currentIdx > 0 && currentIdx % 5 === 0 && currentIdx < questions.length) {
+        showKnowledge();
+        return;
+      }
+      
+      if (currentIdx >= questions.length) {
+        finishQuiz();
+        return;
+      }
+      
+      var q = questions[currentIdx];
+      document.getElementById('qIndex').innerText = currentIdx + 1;
+      document.getElementById('qText').innerText = q.text;
+      
+      // Atualizar barra de progresso
+      var progress = ((currentIdx + 1) / questions.length) * 100;
+      document.getElementById('progressBar').style.width = progress + '%';
+      
+      // Atualizar nome da fase
+      var phaseName = q.mod === 'QP' ? 'FASE 1: FORÇA MENTAL' : 
+                      q.mod === 'SAB' ? 'FASE 2: SABOTADORES' : 
+                      'FASE 3: PERFIL DISC';
+      document.getElementById('phaseName').innerText = phaseName;
+      
+      var container = document.getElementById('optionsContainer'); 
+      container.innerHTML = '';
+      
+      if (q.type === 'LIKERT') {
+        var labels = ["Discordo Totalmente", "Discordo", "Neutro", "Concordo", "Concordo Totalmente"];
+        for (var i = 1; i <= 5; i++) { 
+          createOption(i, labels[i-1], i, container); 
+        }
+      } else {
+        q.opts.forEach(function(opt, idx) { 
+          createOption(opt.v, opt.t, String.fromCharCode(65 + idx), container); 
+        });
+      }
+    }
+
+    function showKnowledge() {
+      const tips = [
+        { title: "Você sabia?", text: "Seu Quociente Positivo (QP) mede quanto tempo sua mente trabalha a seu favor em vez de sabotar seus resultados." },
+        { title: "Interessante!", text: "Os sabotadores mentais são padrões de pensamento que nos impedem de alcançar nosso potencial máximo." },
+        { title: "Curiosidade", text: "O modelo DISC foi desenvolvido pelo psicólogo William Marston na década de 1920 e é usado globalmente até hoje." }
+      ];
+      const tip = tips[Math.floor(Math.random() * tips.length)];
+      
+      document.getElementById('kTitle').innerText = tip.title;
+      document.getElementById('kText').innerText = tip.text;
+      document.getElementById('quizStep').classList.add('hidden');
+      document.getElementById('knowledgeStep').classList.remove('hidden');
+    }
+
+    function resumeQuiz() {
+      document.getElementById('knowledgeStep').classList.add('hidden');
+      document.getElementById('quizStep').classList.remove('hidden');
+      renderQuestion();
+    }
+
+    function createOption(value, text, label, container) {
+      var btn = document.createElement('div');
+      btn.className = "option-card p-5 rounded-2xl flex items-center gap-4";
+      btn.onclick = function() { selectOption(value); };
+      btn.innerHTML = '<div class="w-10 h-10 bg-slate-800 flex items-center justify-center rounded-xl font-bold text-indigo-400">' + label + '</div><span class="text-slate-300">' + text + '</span>';
+      container.appendChild(btn);
+    }
+
+    function selectOption(val) {
+      var q = questions[currentIdx];
+      answers.push({ 
+        mod: q.mod, 
+        choice: val,
+        sabName: q.sabName || null
+      });
+      currentIdx++;
+      renderQuestion();
+    }
+
+    async function finishQuiz() {
+      document.getElementById('quizStep').classList.add('hidden');
+      document.getElementById('loadingStep').classList.remove('hidden');
+      
+      try {
+        const response = await fetch(`${API_BASE}/process`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            answers: answers, 
+            isFull: isFull,
+            userInfo: userInfo
+          })
+        });
+        
+        const result = await response.json();
+        
+        document.getElementById('loadingStep').classList.add('hidden');
+        document.getElementById('reportStep').classList.remove('hidden');
+        document.getElementById('reportContent').innerHTML = result.report;
+      } catch (error) {
+        console.error('Erro ao processar resultado:', error);
+        alert('Erro ao processar sua avaliação. Por favor, tente novamente.');
+      }
+    }
+  </script>
+</body>
+</html>
