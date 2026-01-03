@@ -3,6 +3,14 @@
  * Retorna as questões do quiz
  */
 
+// --- CONFIGURAÇÃO DE QUESTÕES ---
+const QUIZ_CONFIG = {
+  QP_QUESTIONS_COUNT: 10,
+  SABOTADOR_QUESTIONS_COUNT: 10,
+  DISC_FULL_QUESTIONS_COUNT: 10,
+  DISC_FREE_QUESTIONS_COUNT: 4
+};
+
 // --- BANCO DE QUESTÕES (MASTER BANK) ---
 const MASTER_QUESTION_BANK = {
   QP: [
@@ -58,7 +66,7 @@ function getQuizData(isFull) {
   
   // Questões QP (sempre incluídas)
   questions = questions.concat(
-    getRandomItems(MASTER_QUESTION_BANK.QP, 10).map(t => ({ 
+    getRandomItems(MASTER_QUESTION_BANK.QP, QUIZ_CONFIG.QP_QUESTIONS_COUNT).map(t => ({ 
       mod: 'QP', 
       type: 'LIKERT', 
       text: t 
@@ -68,7 +76,7 @@ function getQuizData(isFull) {
   if (isFull) {
     // Questões de Sabotadores (apenas versão completa)
     questions = questions.concat(
-      getRandomItems(MASTER_QUESTION_BANK.SABOTADORES, 10).map(q => ({ 
+      getRandomItems(MASTER_QUESTION_BANK.SABOTADORES, QUIZ_CONFIG.SABOTADOR_QUESTIONS_COUNT).map(q => ({ 
         mod: 'SAB', 
         type: 'LIKERT', 
         text: q.t, 
@@ -76,9 +84,9 @@ function getQuizData(isFull) {
       }))
     );
     
-    // Questões DISC (versão completa - 10 questões)
+    // Questões DISC (versão completa)
     questions = questions.concat(
-      getRandomItems(MASTER_QUESTION_BANK.DISC, 10, true).map(q => ({ 
+      getRandomItems(MASTER_QUESTION_BANK.DISC, QUIZ_CONFIG.DISC_FULL_QUESTIONS_COUNT, true).map(q => ({ 
         mod: 'DISC', 
         type: 'TETRA', 
         text: q.t, 
@@ -86,9 +94,9 @@ function getQuizData(isFull) {
       }))
     );
   } else {
-    // Questões DISC (versão gratuita - 4 questões)
+    // Questões DISC (versão gratuita)
     questions = questions.concat(
-      getRandomItems(MASTER_QUESTION_BANK.DISC, 4, true).map(q => ({ 
+      getRandomItems(MASTER_QUESTION_BANK.DISC, QUIZ_CONFIG.DISC_FREE_QUESTIONS_COUNT, true).map(q => ({ 
         mod: 'DISC', 
         type: 'TETRA', 
         text: q.t, 
